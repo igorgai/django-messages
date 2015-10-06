@@ -98,10 +98,8 @@ def new_message_email(sender, instance, signal,
                     if "mailer" in settings.INSTALLED_APPS:
                         send_html_mail(subject, message, html_message, settings.DEFAULT_FROM_EMAIL, recipients)
                     else:
-                        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, recipients)
-
-                        # html version
                         msg = EmailMultiAlternatives(subject, message, settings.DEFAULT_FROM_EMAIL, recipients)
+                        # html version
                         msg.attach_alternative(html_message, "text/html")
                         msg.send()
         except Exception as e:
