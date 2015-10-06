@@ -1,0 +1,22 @@
+{% load i18n %}
+{% load url from future %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>You have a new message at {{ site_url }}</title>
+    </head>
+    <body style="margin:0px;padding:0px;">
+        <p>{% blocktrans with recipient=message.recipient sender=message.sender %}Hello {{ recipient }},</p>
+
+        <p>you received a private message from {{ sender }} with
+          the following contents:{% endblocktrans %}</p>
+
+        {{ message.body|safe }}
+
+        --
+
+        <p>{% blocktrans %}Sent from <a href="{{ site_url }}">{{ site_url }}</a>{% endblocktrans %}</p>
+        <a href="{{ site_url }}{% url 'messages_inbox' %}">{% trans "Inbox" %}</a>
+        <a href="{{ site_url }}{% url 'messages_reply' message.pk %}">{% trans "Reply" %}</a>
+    </body>
+</html>

@@ -12,6 +12,7 @@ if "mailer" in settings.INSTALLED_APPS:
     from mailer import send_mail
 else:
     from django.core.mail import send_mail
+    from django.core.mail import EmailMultiAlternatives
 
 def format_quote(sender, body):
     """
@@ -55,16 +56,19 @@ def format_subject(subject):
         'subject': subject, 
         'prefix': prefix
     }
-    
-def new_message_email(sender, instance, signal, 
-        subject_prefix=_(u'New Message: %(subject)s'),
-        template_name="django_messages/new_message.html",
-        default_protocol=None,
-        *args, **kwargs):
+
+
+def new_message_email(sender, instance, signal,
+                      subject_prefix=_(u'New Message: %(subject)s'),
+                      template_name="django_messages/new_message.html",
+                      html_template_name="django_messages/new_message_html.html",
+                      default_protocol=None,
+                      *args, **kwargs):
     """
     This function sends an email and is called via Django's signal framework.
     Optional arguments:
         ``template_name``: the template to use
+        ``html_template_name``: the template to use for sending html version  email
         ``subject_prefix``: prefix for the email subject.
         ``default_protocol``: default protocol in site URL passed to template
     """
@@ -79,9 +83,23 @@ def new_message_email(sender, instance, signal,
                 'site_url': '%s://%s' % (default_protocol, current_domain),
                 'message': instance,
             })
+            html_message = render_to_string(html_template_name, {
+                'site_url': '%s://%s' % (default_protocol, current_domain),
+                'message': instance,
+            })
+
             if instance.recipient.email != "":
-                send_mail(subject, message, settings.DEFAULT_FROM_EMAIL,
-                    [instance.recipient.email,])
+                recipient_list = [instance.recipient.email, ]
+                if django.VERSION[:2] >= (1, 7):
+                    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL,
+                              recipient_list, html_message=html_message)
+                else:
+                    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL,
+                              recipient_list)
+                    # html version
+                    msg = EmailMultiAlternatives(subject, message, settings.DEFAULT_FROM_EMAIL, recipient_list)
+                    msg.attach_alternative(html_message, "text/html")
+                    msg.send()
         except Exception as e:
             #print e
             pass #fail silently
